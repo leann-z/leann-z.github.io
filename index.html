@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leann Alhashishi</title>
+<meta name="description" content="Machine learning researcher working on computer vision and weight-space learning.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/gif" href="assets/gifs/star.gif">
+</head>
+<body>
+
+<div class="page">
+
+  <div class="header-card">
+    <img class="headshot" src="assets/portrait.jpg" alt="a photo of leann">
+    <div class="header-info">
+      <h1>Hi, I'm Leann Alhashishi</h1>
+      <p class="tagline">Machine Learning Researcher</p>
+      <p class="links-line">
+        <a href="assets/resume.pdf" target="_blank">[resume]</a>
+        &middot;
+        <a href="https://github.com/leann-z" target="_blank" rel="noopener">[github]</a>
+        &middot;
+        <a href="https://www.linkedin.com/in/leann-alhashishi" target="_blank" rel="noopener">[linkedin]</a>
+        &middot;
+        <span class="email">leannalhashishi(at)gmail(dot)com</span>
+      </p>
+      <p class="bio">
+        I work on machine learning, with a focus on computer vision and weight-space learning.
+        I just completed an MPhil in Machine Learning and Machine Intelligence at the
+        University of Cambridge. I've previously interned as a software engineer at Cisco and the
+        National Nuclear Security Administration.
+      </p>
+    </div>
+  </div>
+
+  
+  <p class="divider"><img class="icon-gif" src="assets/gifs/star.gif" alt=""></p>
+  <h2>Recent projects</h2>
+
+
+  <div class="project-row">
+    <div class="project-text">
+      <p class="project-title">Memory-Intensive Tasks with Test-Time Training</p>
+      <p class="project-authors"><u>Leann Alhashishi</u>, Sebastian W. Pattinson, Christos Margadji.</p>
+      <p class="project-venue">ICRA 2027 (submitted). <a href="assets/projects/dissertation.pdf" target="_blank">[PDF]</a></p>
+      <p class="project-blurb">
+        Fit per-episode neural implicit representations over robot video via MAML, then
+        projected the weights as tokens into TinyLlama-1.1B (QA) and Pythia-400M (action
+        control). No raw frames at inference: +19.1pp over baseline on memory-dependent
+        video QA, and R&sup2; +0.51-0.54 on held-out joint-action regression.
+      </p>
+    </div>
+    <p class="project-year">2026</p>
+  </div>
+
+ <div class="project-row">
+  <div class="project-text">
+    <p class="project-title">InLink</p>
+    <p class="project-authors">Leann Alhashishi, Ahmed Haytham.</p>
+    <p class="project-blurb">
+      Building a weight-space implicit memory model as a RAG alternative for enterprise
+      QA. 100x fewer context tokens and 55x faster retrieval than dense
+      retrieval, over 5K synthetic documents.
+    </p>
+  </div>
+    <p class="project-year">2026&ndash;present</p>
+</div>
+
+  <div class="project-row">
+    <div class="project-text">
+      <p class="project-title">Upper-Limb Synergy Modeling from Real-World Contactless Motion Tracking</p>
+      <p class="project-authors">Parthan Olikkal, <u>Leann Alhashishi</u>, Rajasekhar Anguluri, Ramana Vinjamuri.</p>
+      <p class="project-venue">BIOROB 2026 (accepted, oral). <a href="assets/projects/biorob.pdf" target="_blank">[PDF]</a></p>
+      <p class="project-blurb">
+        Reduced synergy dimensionality by ~50% (7-10 to 3-5 dimensions) and captured
+        ~10% more variance than PCA (p &lt; 1e-7 across 40 subjects) using Robust PCA on
+        noisy vision-tracked hand motion, validated on a 6-DoF robotic hand.
+      </p>
+    </div>
+    <p class="project-year">2026</p>
+  </div>
+
+  <div class="project-row">
+    <div class="project-text">
+      <p class="project-title">Leveling Up the Relationship: Co-designing a Social Biosignal Sharing App to Foster Emotional Awareness and Sense of Belonging</p>
+      <p class="project-authors">Jennifer Posada, Asha Kumar, <u>Leann Alhashishi</u>, Anuoluwapo Olutoye, Tera L. Reynolds, Andrea Kleinsmith.</p>
+      <p class="project-venue">CHI 2027 (submitted).</p>
+      <p class="project-blurb">
+        An HCI co-design study exploring social biosignal-sharing technology recorded over weeks using Empatica’s E4 wristband.
+      </p>
+    </div>
+    <p class="project-year">2026</p>
+  </div>
+
+  <p class="divider"><img class="icon-gif" src="assets/gifs/star.gif" alt=""></p>
+
+<details class="sign-section">
+  <summary>Click here to sign my site.</summary>
+  <div class="sign-row">
+    <div class="doodle-pad">
+      <canvas id="doodle" width="260" height="260"></canvas>
+      <p class="doodle-controls">
+       <button id="color-wheel" type="button" class="pickr-swatch"></button>
+        <button id="clear-btn">clear</button>
+        <button id="save-btn">save to gallery</button>
+      </p>
+      <p id="save-status" class="save-status"></p>
+    </div>
+
+  </div>
+</details>
+
+
+</div>
+
+<footer class="fence">
+  <div id="gallery" class="gallery">
+    <p class="gallery-loading">loading doodles...</p>
+  </div>
+</footer>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/cursor-effects@1.0.18/dist/browser.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+<script>
+  window.addEventListener('load', () => {
+    new cursoreffects.fairyDustCursor({
+      colors: ["#ffcc00", "#cc0000", "#000080"],
+      fairySymbol: "\u2726"
+    });
+  });
+</script>
+<script src="script.js"></script>
+</body>
+</html>
