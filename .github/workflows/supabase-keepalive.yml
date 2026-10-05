@@ -1,0 +1,104 @@
+name: Supabase keep-alive
+
+# Free-tier Supabase projects are paused after 7 days of inactivity, which
+# breaks the doodle gallery in the site footer until it is manually restored
+# from the dashboard. This writes a tiny object to Storage every 3 days so the
+# inactivity timer never reaches 7. It must be a *write*: Supabase tightened
+# what counts as activity and a plain read is no longer reliably enough.
+#
+# Three constraints on the 'doodles' bucket were verified against the live
+# project before writing this, and they shape the whole job:
+#   1. The bucket rejects non-image MIME types (text/plain -> 415), so the
+#      ping payload is a 1x1 PNG rather than a text file.
+#   2. The anon role may INSERT but not UPDATE (x-upsert -> 403 RLS), so each
+#      run writes a new uniquely-named object instead of overwriting one.
+#   3. The anon role may not DELETE, so the job cannot clean up after itself.
+#      These are 68 bytes each, ~8 KB/year -- see the note at the bottom.
+
+on:
+  schedule:
+    # Every 3 days at 04:17 UTC. Deliberately more often than strictly needed:
+    # GitHub delays scheduled runs under load, and a weekly ping against a
+    # 7-day timer leaves no margin for a single missed run.
+    - cron: '17 4 */3 * *'
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Write keep-alive object to Supabase Storage
+        env:
+          # Same public values as script.js. The anon key is designed to be
+          # published; it is already served to every visitor of the site.
+          # If you ever rotate it, update it here and in script.js.
+          SUPABASE_URL: https://alazsuhyopftovdjxtce.supabase.co
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsYXpzdWh5b3BmdG92ZGp4dGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMzcxMDAsImV4cCI6MjEwMzYxMzEwMH0.v0ylSj_E8X2OZLCnZ6fT9_3HauH4xE3CTZ5ZVNLrGCo
+          BUCKET: doodles
+        run: |
+          set -uo pipefail
+
+          # Under a keepalive/ prefix, so the gallery never shows it: loadGallery
+          # in script.js lists the bucket root, where this whole prefix collapses
+          # to a single folder entry named "keepalive" that fails its
+          # .endsWith('.png') filter. Verified against the live bucket.
+          object="keepalive/ping-$(date -u +%Y%m%d-%H%M%S).png"
+
+          # Smallest valid PNG: 1x1 transparent, 68 bytes.
+          echo 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=' | base64 -d > ping.png
+
+          # Stale files from a previous step would be printed as if they were
+          # this attempt's response, so start clean.
+          rm -f resp.txt curlerr.txt
+
+          code=$(curl -sS -o resp.txt -w '%{http_code}' \
+            -X POST "$SUPABASE_URL/storage/v1/object/$BUCKET/$object" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: image/png" \
+            --data-binary @ping.png 2>curlerr.txt)
+          rc=$?
+
+          # On a transport failure curl both prints 000 via -w and exits
+          # non-zero; appending our own 000 would yield "000000" and fall
+          # through to the generic branch below, reporting a permissions
+          # problem for what is actually an unreachable host. The exit status
+          # is the authoritative signal, so normalise on it.
+          if [ "$rc" -ne 0 ]; then
+            code="000"
+          fi
+
+          echo "target: $object"
+          echo "HTTP $code (curl exit $rc)"
+          echo "--- response ---"
+          cat resp.txt 2>/dev/null || true
+          cat curlerr.txt 2>/dev/null || true
+          echo
+
+          case "$code" in
+            200|201)
+              echo "Keep-alive write succeeded; inactivity timer reset."
+              ;;
+            000)
+              echo "::error::Could not reach $SUPABASE_URL at all. The project is probably already paused -- Supabase withdraws a paused project's DNS -- and needs a manual Restore in the dashboard. The keep-alive cannot un-pause it."
+              exit 1
+              ;;
+            *)
+              echo "::error::Keep-alive write failed with HTTP $code; see the response body above. A 4xx most likely means the anon role lost INSERT access to the '$BUCKET' bucket, or the bucket's allowed MIME types changed."
+              exit 1
+              ;;
+          esac
+
+# Housekeeping: because anon cannot delete, these accumulate at ~122 objects
+# (~8 KB) a year, invisible to the site but visible in the Storage dashboard.
+# To make the job reuse one object instead, grant the anon role UPDATE on this
+# prefix, then add back '-H "x-upsert: true"' and a fixed object name:
+#
+#   create policy "anon upsert keepalive"
+#     on storage.objects for update to anon
+#     using (bucket_id = 'doodles' and name like 'keepalive/%');
